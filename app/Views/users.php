@@ -1,9 +1,6 @@
 <?php
 
-// echo '<pre>';
-// print_r($data);
-// echo '</pre>';
-
+$session = session();
 ?>
 
 <!DOCTYPE html>
@@ -12,7 +9,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Employees</title>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
 
     <!-- bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
@@ -41,7 +42,7 @@
         let table = new DataTable('#showTable');
 
         $(document).ready(function () {
-            $('#example').DataTable();
+            $('#userTable').DataTable();
             // Enable Bootstrap tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
         });
@@ -55,8 +56,14 @@
     <div class="container mt-5">
         <div class="row d-flex justify-content-center align-items-center">
             <div class="col-12 col-lg-12">
-                <table class="table table-responsive table-hover" id="example" class="display"
-                    style="width:100%">
+                <div class="mb-3">
+                    <?php if (session()->getFlashdata('success')) { ?>
+                        <p id="information-message" class="text-center bg-success text-light py-1 rounded">
+                            <?= session()->getFlashdata('success') ?>
+                        </p>
+                    <?php } ?>
+                </div>
+                <table class="table table-responsive table-hover" id="userTable" style="width:100%">
                     <thead>
                         <tr class="dm-serif-display-regular">
                             <th>ID</th>
@@ -65,30 +72,98 @@
                             <th>Email Address</th>
                             <th>Role</th>
                             <th>Status</th>
-                            <th>Date created</th>
-                            <th>Date updated</th>
+                            <th>Date Created</th>
+                            <th>Date Updated</th>
                             <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="open-sans-text">
-                        <?php
-                        foreach ($data as $person) {
-                            echo "<tr>";
-                            echo "<td>{$person['id']}</td>";
-                            echo "<td class='text-capitalize'>{$person['firstName']}</td>";
-                            echo "<td class='text-capitalize'>{$person['lastName']}</td>";
-                            echo "<td>{$person['email']}</td>";
-                            echo "<td class='text-capitalize'>{$person['role']}</td>";
-                            echo "<td class='text-capitalize'>{$person['status']}</td>";
-                            echo "<td>{$person['ucreated_at']}</td>";
-                            echo "<td>{$person['uupdated_at']}</td>";
-                            echo "<td class='text-center dm-serif-display-regular'><a class='mx-1 btn btn-warning btn-sm' href='/editUser/{$person['id']}'>Edit</a>";
-                            echo "<a class='mx-1 btn btn-danger btn-sm' href='/deleteUser/{$person['id']}'>Delete</a></td>";
-                            echo "</tr>";
-                        }
-                        ; ?>
+                        <?php foreach ($data as $person): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($person['id']) ?></td>
+                                <td class='text-capitalize'><?= htmlspecialchars($person['firstName']) ?></td>
+                                <td class='text-capitalize'><?= htmlspecialchars($person['lastName']) ?></td>
+                                <td><?= htmlspecialchars($person['email']) ?></td>
+                                <td class='text-capitalize'><?= htmlspecialchars($person['role']) ?></td>
+                                <td class='text-capitalize'><?= htmlspecialchars($person['status']) ?></td>
+                                <td><?= htmlspecialchars($person['ucreated_at']) ?></td>
+                                <td><?= htmlspecialchars($person['uupdated_at']) ?></td>
+                                <td class='text-center dm-serif-display-regular'>
+                                    <button type='button' class='editUserModalButton m-1 btn btn-warning btn-sm'
+                                        data-bs-toggle='modal' data-bs-target='#editUser'
+                                        data-id='<?= htmlspecialchars($person['id']) ?>'
+                                        data-firstName='<?= htmlspecialchars($person['firstName']) ?>'
+                                        data-lastName='<?= htmlspecialchars($person['lastName']) ?>'
+                                        data-email='<?= htmlspecialchars($person['email']) ?>'
+                                        data-role='<?= htmlspecialchars($person['role']) ?>'
+                                        data-status='<?= htmlspecialchars($person['status']) ?>'>Edit
+                                    </button>
+                                    <a class='m-1 btn btn-danger btn-sm'
+                                        href='/deleteUser/<?= htmlspecialchars($person['id']) ?>'>Delete</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit user Modal -->
+    <div class="modal fade" id="editUser" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5 dm-serif-display-regular" id="staticBackdropLabel">Edit User</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form class="border rounded px-4 pb-3" method="POST" action="<?= base_url('/update'); ?>">
+                    <div class="modal-body">
+                        
+                        <!-- ID -->
+                        <input type="hidden" id="editUserId" name="editUserId">
+                        <div class="mb-3 open-sans-text">
+                            <label for="editUserFirstName">Given Name</label>
+                            <input id="editUserFirstName" name="editUserFirstName" class="form-control form-control-sm"
+                                type="text" placeholder="">
+                        </div>
+                        <div class="mb-3 open-sans-text">
+                            <label for="editUserLastName">Family Name</label>
+                            <input id="editUserLastName" name="editUserLastName" class="form-control form-control-sm"
+                                type="text" placeholder="">
+                        </div>
+                        <div class="mb-3 open-sans-text">
+                            <label for="editUserEmail">Email Address</label>
+                            <input id="editUserEmail" name="editUserEmail" class="form-control form-control-sm"
+                                type="email" placeholder="">
+                        </div>
+                        <div class="mb-3 open-sans-text">
+                            <label for="editUserRole">Role</label>
+                            <select class="form-select form-select-sm" id="editUserRole" name="editUserRole">
+                                <option value="admin">Admin
+                                </option>
+                                <option value="user">User
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-3 open-sans-text">
+                            <label for="editUserStatus">Status</label>
+                            <select class="form-select form-select-sm" id="editUserStatus" name="editUserStatus">
+                                <option value="active">Active
+                                </option>
+                                <option value="inactive">
+                                    Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer dm-serif-display-regular pb-0">
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="modal">Close</button>
+                        <!-- <button type="button" class="btn btn-primary">Understood</button> -->
+                        <button type="submit" class="mx-1 btn btn-success btn-sm">Submit</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -97,6 +172,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+
     <!-- script data tables -->
     <script src="https://cdn.datatables.net/2.1.7/css/dataTables.bootstrap5.min.css"></script>
 
@@ -104,6 +180,38 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+
+    <script>
+        $(document).ready(function () {
+            var table = $('#userTable').DataTable();
+
+            $(document).on("click", ".editUserModalButton", function () {
+                var userId = $(this).attr('data-id');
+                var userFirstName = $(this).attr('data-firstName');
+                var userLastName = $(this).attr('data-lastName'); // Ensure 'userLastName' is used correctly
+                var userEmail = $(this).attr('data-email');
+                var userRole = $(this).attr('data-role');
+                var userStatus = $(this).attr('data-status');
+
+                // Set values in the modal
+                $('#editUserId').val(userId);
+                $('#editUserFirstName').val(userFirstName);
+                $('#editUserLastName').val(userLastName); // Corrected variable name
+                $('#editUserEmail').val(userEmail);
+                $('#editUserRole').val(userRole); // Corrected ID
+                $('#editUserStatus').val(userStatus); // Correct ID
+            });
+        });
+
+        // Use JavaScript to set a timeout to hide the message after 5 seconds
+        setTimeout(function () {
+            var message = document.getElementById('information-message');
+            if (message) {
+                message.style.display = 'none'; // Hide the message
+            }
+        }, 3000); // 5000 milliseconds = 5 seconds
+    </script>
+
 </body>
 
 </html>

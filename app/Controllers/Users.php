@@ -39,46 +39,45 @@ class Users extends BaseController
 
     public function update()
     {
-        // Load the model (make sure this is in the constructor or method)
+        // Load the model
         $userModel = new UserModel();
-        $this->userModel->db->transStart();
 
         // Get the input data
         $data = [
-            'id' => htmlspecialchars($this->request->getVar('id')),
-            'firstName' => htmlspecialchars($this->request->getVar('firstName')),
-            'lastName' => htmlspecialchars($this->request->getVar('lastName')),
-            'email' => htmlspecialchars($this->request->getVar('email')),
-            'role' => htmlspecialchars($this->request->getVar('role')),
-            'status' => htmlspecialchars(trim($this->request->getVar('status')))
+            'id' => htmlspecialchars($this->request->getVar('editUserId')),
+            'firstName' => htmlspecialchars($this->request->getVar('editUserFirstName')),
+            'lastName' => htmlspecialchars($this->request->getVar('editUserLastName')),
+            'email' => htmlspecialchars($this->request->getVar('editUserEmail')),
+            'role' => htmlspecialchars($this->request->getVar('editUserRole')),
+            'status' => htmlspecialchars(trim($this->request->getVar('editUserStatus')))
         ];
 
         // Start a transaction
-        $this->db->transStart();
+        $db = \Config\Database::connect();
+        $db->transStart();
 
         try {
             // Update the employee record
-            $userModel->set($data);
-            $userModel->where('id', $this->request->getVar('id'));
-            $updateResult = $userModel->update();
-
-            // Check if the update was successful
-            $session = session();
-            if ($this->db->affectedRows() > 0) {
-                // Set success message
-                $session->setFlashdata('success', 'User was updated successfully.');
-            } else {
-                // Set failure message (no rows affected)
-                $session->setFlashdata('error', 'No changes were made or user not found.');
-            }
+            $userModel->update($data['id'], $data);
 
             // Complete the transaction
-            $this->db->transComplete();
+            $db->transComplete();
+
+            // Check if the transaction was successful
+            $session = session();
+            if ($db->transStatus() === false) {
+                // Transaction failed
+                $db->transRollback();
+                $session->setFlashdata('error', 'Failed to update the user. Please try again.');
+            } else {
+                // Transaction succeeded
+                $session->setFlashdata('success', 'User was updated successfully.');
+            }
         } catch (\Exception $e) {
             // Rollback transaction if there was an error
-            $this->db->transRollback();
+            $db->transRollback();
 
-            // Log the error message (consider using a logging library)
+            // Log the error message
             log_message('error', $e->getMessage());
 
             // Set error flash message
@@ -86,6 +85,6 @@ class Users extends BaseController
         }
 
         // Redirect back to the edit user page
-        return redirect()->to('/editUser/' . $this->request->getVar('id'));
+        return redirect()->to('/users/');
     }
 }

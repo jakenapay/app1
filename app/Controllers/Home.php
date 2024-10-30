@@ -53,6 +53,33 @@ class Home extends BaseController
         return view('editUser', $data);
     }
 
+    public function sendMail()
+    {
+        // recipient 
+        $to = 'jakemantesnapay@gmail.com'; 
+        $subject = '';
+        $message = '';
+        $email = \Config\Services::email();
+        $email->setTo($to);
+        $email->setSubject($subject);
+        $email->setFrom('jakemantesnapay@gmail.com', $subject);
+        $email->setMessage($message);
+        if ($email->send()) {
+            echo 'main sent successfully';
+        } else {
+            $data = $email->printDebugger();
+            print ($data);
+        }
+    }
 
+    public function mail()
+    {
+        $this->sendMail();
+    }
 
+    public function showProfile($id = null) {
+        $employeeModel = new EmployeeModel();
+        $data['data'] = $employeeModel->where('id', $id)->first();
+        return view('profile', $data);
+    }
 }

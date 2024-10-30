@@ -12,8 +12,10 @@ class UserModel extends Model {
         'lastName',
         'email',
         'password',
+        'confirmPassword',
         'role',
         'status',
+        'token',
         'ucreadted_at',
         'uupdated_at'
     ];
